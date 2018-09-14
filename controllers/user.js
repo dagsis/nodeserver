@@ -13,9 +13,9 @@ sql.Promise = global.Promise;
 
 var config = {
     user: 'sa',
-    password: 'hola10',
-    server: 'NT-DAGSIS',
-    database: 'RedSocial'
+    password: 'Zulu1234.',
+    database: 'RedSocial',
+    server: 'sd-1117476-w.ferozo.com'
 };
 
 // fin sql server
@@ -51,9 +51,51 @@ function saveUser(req, res) {
 
         // send records as a response
 
-        var mod = userService.existeUsuario();
-        mod.rate(5);
-        console.log(mod.get());
+
+        var mod = userService.existeUsuario(user.nick,user.email,function(err,resultado) {
+            if (resultado != 0) {
+                return res.status(200).send({
+                    mensage: 'Registro Repetido'
+                });
+            }else {
+
+                sql.connect(config).then(() => {
+                    console.log("Conexion Exitosa...");
+
+                    var request = new sql.Request();
+
+                    // query to the database and get the records
+                    request.input('name', sql.VarChar, user.name);
+                    request.input('surname', sql.VarChar, user.surname);
+                    request.input('nick', sql.VarChar, user.nick);
+                    request.input('email', sql.VarChar, user.email);
+                    request.input('password', sql.VarChar, user.password);
+                    request.input('role', sql.VarChar, user.role);
+                    request.input('image', sql.VarChar, user.image);
+
+                    request.query('INSERT INTO Users (name,surname,nick,email,password,role,image) VALUES (@name,@surname,@nick,@email,@password,@role,@image)',
+                        function(err, recordset) {
+
+                            sql.close();
+
+                            if (err) {
+                                res.status(200).send({
+                                    message: err.originalError.info.message
+                                });
+                            }
+
+                            // send records as a response
+                            res.status(200).send({
+                                message: 'Registro Agregado Correctamente'
+                            });
+                        });
+                }); 
+          
+            }
+              
+        });
+
+
 
         //  console.log(userService.existeUsuario(user.email, user.nick));
 
@@ -104,7 +146,8 @@ function saveUser(req, res) {
             } else {
                 res.status(200).send({
                     message: 'Todos los Campos son obligatorios'
-                }); */
+                }); 
+             */      
     }
 }
 
