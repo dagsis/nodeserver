@@ -55,13 +55,62 @@ function saveUser(req, res) {
                             message: err.originalError.message
                         });
                     }
+                });
+            }
+        });
+    } else {
+        res.status(200).send({
+            message: 'Todos los Campos son Obligarios'
+        });
+    }
+
+}
+
+function loginUser(req, res) {
+    var params = req.body;
+
+    if (params.email && params.password) {
+        var email = params.email;
+        var password = params.password;
+
+        userService.traerUsuario(email, function(err, resultado) {
+
+            if (err) {
+                return res.status(200).send({
+                    message: err.originalError.message
+                });
+            }
+
+            if (resultado.rowsAffected == 0) {
+                res.status(200).send({
+                    message: 'Usuario Inexistente'
+                });
+            } else {
+                bcrypt.compare(password, resultado.recordset[0].password, (err, check) => {
+                    if (check) {
+                        res.status(200).send({
+                            message: resultado.recordset[0]
+                        });
+                    } else {
+                        res.status(200).send({
+                            message: 'Contraseña Invalida'
+                        });
+                    }
                 })
             }
         });
+
+    } else {
+        res.status(200).send({
+            message: 'Todos los Campos son Obligarios'
+        });
     }
+
+
 }
 
 module.exports = {
     home,
-    saveUser
+    saveUser,
+    loginUser
 };

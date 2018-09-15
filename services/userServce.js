@@ -40,10 +40,30 @@ module.exports.existeUsuario = function(nick, email, done) {
     });
 }
 
+module.exports.traerUsuario = function(email, done) {
+    sql.connect(config).then(() => {
+
+        var request = new sql.Request();
+
+        request.input('email', sql.VarChar, email);
+        request.query('select * from users WHERE email=@email',
+            function(err, recordset) {
+
+                sql.close();
+
+                if (err) {
+                    return done(err, null);
+                }
+
+                return done(null, recordset);
+
+            });
+    }).catch((err) => {
+        return done(err, null);
+    });
+}
 
 module.exports.addUsuario = function(user, done) {
-
-
     sql.connect(config).then(() => {
 
         var request = new sql.Request();
