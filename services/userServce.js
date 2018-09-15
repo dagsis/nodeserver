@@ -1,74 +1,79 @@
-// sql Server
 'use strict'
+
 var sql = require('mssql');
+var helper = require('../helpers/helper');
 
-var config = {
-    user: 'sa',
-    password: 'Zulu1234.',
-    database: 'RedSocial',
-    server: 'sd-1117476-w.ferozo.com'
-};
+var config = helper.configDb;
 
-/* module.exports.existeUsuario = function(nick,email) {
-           return new Promise(function(resolve,reject) 
-          {
-            GetUserExit(nick, email, function(recordset) { 
-                var resul = false;               
-                if (recordset.rowsAffected !=0)
-                {
-                    resul = true;                   
-                }
-                return resolve(resul);               
-              }) 
-          });     
-        } */
-            
-/* module.exports.existeUsuario = function(nick,email,done) {
-    GetUserExit(nick, email, function(recordset) { 
-        var resul = false;               
-        if (recordset.rowsAffected !=0)
-        {
-            resul = true;                   
-        }
-        return done(null,resul);               
-    });      
-} */
+sql.Promise = global.Promise;
 
-module.exports.existeUsuario = function(nick,email,done) {
+module.exports.existeUsuario = function(nick, email, done) {
     var connection = new sql.connect(config, function(err) {
 
-        // check for error by ...
+        if (err) {
+            sql.close();
+            return done(err, null);
+        }
+
         var request = new sql.Request(connection);
 
         request.input('nick', sql.VarChar, nick);
         request.input('email', sql.VarChar, email);
-        request.query('select * from users WHERE email=@email or nick=@nick', 
-                        function(err, recordset) {                             
-                                sql.close();           
-                                var resul = false;               
-                                if (recordset.rowsAffected !=0)
-                                {
-                                    resul = true;                   
-                                }
-                                return done(null,resul);       
-                        });
+        request.query('select * from users WHERE email=@email or nick=@nick',
+            function(err, recordset) {
+
+                var resul = false;
+
+                if (err) {
+                    sql.close();
+                    return done(err, null);
+                }
+
+                if (recordset.rowsAffected != 0) {
+                    resul = true;
+                }
+
+                sql.close();
+                return done(null, resul);
+
+            });
     });
 }
 
-function GetUserExit(nick,email, callback) {
- 
-    var connection = new sql.connect(config, function(err) {
 
-        // check for error by ...
-        var request = new sql.Request(connection);
+module.exports.addUsuario = function(user, done) {
 
-        request.input('nick', sql.VarChar, nick);
-        request.input('email', sql.VarChar, email);
-        request.query('select * from users WHERE email=@email or nick=@nick', 
-                        function(err, recordset) {
-                                
-                                sql.close();           
-                                callback(recordset);           
-                        });
+
+    sql.connect(config).then(() => {
+
+        var request = new sql.Request();
+
+        // query to the database and get the records
+        request.input('name', sql.VarChar, user.name);
+        request.input('surname', sql.VarChar, user.surname);
+        request.input('nick', sql.VarChar, user.nick);
+        request.input('email', sql.VarChar, user.email);
+        request.input('password', sql.VarChar, user.password);
+        request.input('role', sql.VarChar, user.role);
+        request.input('image', sql.VarChar, user.image);
+
+        request.query('INSERT INTO Users (name,surname,nick,email,password,role,image) VALUES (@name,@surname,@nick,@email,@password,@role,@image)',
+            function(err, recordset) {
+
+                sql.close();
+
+                var resul = false;
+
+                if (err) {
+                    return done(err, resul);
+                }
+
+                resul = true;
+
+                return done(null, resul);
+
+            });
+    }).catch((err) => {
+        return done(err, null);
     });
 }
