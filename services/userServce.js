@@ -43,8 +43,7 @@ module.exports.existeUsuario = function(nick,email,done) {
         request.input('nick', sql.VarChar, nick);
         request.input('email', sql.VarChar, email);
         request.query('select * from users WHERE email=@email or nick=@nick', 
-                        function(err, recordset) {
-                                
+                        function(err, recordset) {                             
                                 sql.close();           
                                 var resul = false;               
                                 if (recordset.rowsAffected !=0)
