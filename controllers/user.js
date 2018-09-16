@@ -1,14 +1,16 @@
 'use strict'
 
-var user = require('../models/user');
+var userService = require('../models/user');
 var bcrypt = require('bcrypt-nodejs');
 var fs = require('fs');
 var path = require('path');
 
-var userService = require('../services/userServce');
+var xsql = require('../helpers/helper');
 
 var jwt = require('../services/jwt');
 
+// Creo el Modelo
+var user = userService.user;
 
 function home(req, res) {
     res.status(200).send({
@@ -18,8 +20,7 @@ function home(req, res) {
 
 function saveUser(req, res) {
     var params = req.body;
-    // var user = new User();
-
+   
     if (params.name && params.surname && params.nick && params.email && params.password) {
         user.name = params.name;
         user.surname = params.surname;
@@ -32,17 +33,17 @@ function saveUser(req, res) {
             user.password = hash;
         });
 
+        var sql = "select * from users WHERE email='"+ user.email +"' or nick='" + user.nick + "'";
 
-        var mod = userService.UsuarioExiste(user.nick, user.email, function(err, resultado) {
-
+        xsql.executeSql(sql, function(err, resultado) {   
             if (err) {
 
                 return res.status(200).send({
                     message: err.originalError.message
                 });
-            }
+            }          
 
-            if (resultado != 0) {
+            if (resultado.rowsAffected != 0) {
                 return res.status(200).send({
                     mensage: 'El Usuario ya esta registrado en la base de datos'
                 });
@@ -77,7 +78,8 @@ function loginUser(req, res) {
         var email = params.email;
         var password = params.password;
 
-        userService.UsuarioByEmail(email, function(err, resultado) {
+        var sql ="select * from users WHERE email='" + email +"'";
+        xsql.executeSql(sql, function(err, resultado) {
 
             if (err) {
                 return res.status(200).send({
@@ -117,7 +119,8 @@ function loginUser(req, res) {
 function getUser(req, res){
     var userId = req.params.id;
 
-    userService.UsuarioById(userId, function(err, resultado) {
+    var sql ="select * from users WHERE userId=" + userId;
+    xsql.executeSql(sql, function(err, resultado) {
         if (err) {
             return res.status(500).send({
                 message: err.originalError.message
@@ -148,7 +151,9 @@ function getUsers(req,res){
    }
 
    var itemsPage = 5;
-   userService.Usuarios(page,itemsPage, function(err,resultado) {
+
+   var sql ="select * from users ORDER by userId";
+   xsql.executeSql(sql, function(err, resultado) {
     if (err) {
         return res.status(500).send({
             message: err.originalError.message
@@ -166,9 +171,7 @@ function getUsers(req,res){
     }
    
     res.status(200).send({                            
-       user: resultado.recordset,
-       total: resultado.rowsAffected,
-       page
+       user: resultado.recordset       
     });            
    }); 
 }

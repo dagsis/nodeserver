@@ -1,6 +1,13 @@
 'use strict'
 
-var UserSchema = {
+var sql = require('mssql');
+var settings = require('../setting');
+
+var config = settings.dbConfig;
+
+sql.Promise = global.Promise;
+
+exports.user = {
     name: null,
     surname: null,
     nick: null,
@@ -10,4 +17,134 @@ var UserSchema = {
     image: null
 };
 
-module.exports = UserSchema;
+module.exports.addUsuario = function(user, done) {
+    sql.connect(config).then(() => {
+
+        var request = new sql.Request();
+
+        // query to the database and get the records
+        request.input('name', sql.VarChar, user.name);
+        request.input('surname', sql.VarChar, user.surname);
+        request.input('nick', sql.VarChar, user.nick);
+        request.input('email', sql.VarChar, user.email);
+        request.input('role', sql.VarChar, user.role);
+        request.input('password', sql.VarChar, user.password);
+        request.input('image', sql.VarChar, user.image);
+
+        request.query('INSERT INTO Users (name,surname,nick,email,password,role,image) VALUES (@name,@surname,@nick,@email,@password,@role,@image)',
+            function(err, recordset) {
+
+                sql.close();
+
+                var resul = false;
+
+                if (err) {
+                    return done(err, resul);
+                }
+
+                resul = true;
+
+                return done(null, resul);
+
+            });
+    }).catch((err) => {
+        return done(err, null);
+    });
+}
+
+module.exports.UsuarioByIdUpdate = function(userId,user,done) {
+    sql.connect(config).then(() => {
+
+        var request = new sql.Request();
+
+        request.input('id', sql.Int, userId);
+        request.query('select * from users WHERE userId=@id',
+            function(err, recordset) {
+              
+                if (err) {
+                    return done(err, null);
+                }
+
+                if (recordset.rowsAffected == 0) {
+                    return done(null, null);
+                }
+
+                // query to the database and get the records
+                request.input('id', sql.Int, userId);
+                request.input('name', sql.VarChar, user.name);
+                request.input('surname', sql.VarChar, user.surname);
+                request.input('nick', sql.VarChar, user.nick);
+                request.input('email', sql.VarChar, user.email);
+              
+                request.query('UPDATE Users SET name=@name,surname=@surname,nick=@nick,email=@email where userId=@id',
+                    function(err, recordset) {
+
+                        console.log( recordset);
+
+                        sql.close();
+
+                        if (err) {
+                            return done(err, null);
+                        }
+
+                        var updateUser = {
+                            id: userId, 
+                                name: user.name,
+                                surname: user.surname,
+                                nick: user.nick,
+                                email:user.email                            
+                        };
+
+                        return done(null, updateUser)
+                    });
+            });
+
+    }).catch((err) => {
+        return done(err, null);
+    });
+}
+
+module.exports.UsuarioByIdUpdateImg = function(userId, fileName, fileNameOld, done) {
+    sql.connect(config).then(() => {
+
+        var request = new sql.Request();
+
+        request.input('id', sql.Int, userId);
+        request.input('image', sql.VarChar, fileName);      
+        request.query('UPDATE Users SET image=@image where userId=@id',
+            function(err) {
+                
+                if (err) {
+                    return done(err, null);
+                }
+
+                request.input('id', sql.Int, userId);
+                request.query('select * from users WHERE userId=@id',
+                    function(err, recordset) {
+                      
+                        if (err) {
+                            return done(err, null);
+                        }
+        
+                        if (recordset.rowsAffected == 0) {
+                            return done(null, null);
+                        }
+        
+                sql.close();
+
+               console.log(fileNameOld);
+
+                if(fileNameOld){
+                    var filePath = './assets/images/users/' + fileNameOld;
+                    fs.unlink(filePath, (err)=> {              
+                        return done(null, recordset);                          
+                    });   
+                }else {
+                    return done(null, recordset)
+                }
+            });
+        });                
+    }).catch((err) => {
+        return done(err, null);
+    });
+}
