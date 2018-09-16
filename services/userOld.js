@@ -41,3 +41,8 @@ function GetUserExit(nick,email, callback) {
     });
 }
  */
+
+   /*  resultado.recordset[0].password = undefined;
+                        res.status(200).send({                            
+                            message: resultado.recordset[0]
+                        }); */
