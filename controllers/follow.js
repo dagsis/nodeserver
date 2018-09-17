@@ -11,39 +11,40 @@ var Follow = require('../models/follow');
 var follow = Follow.follow;
 
 function saveFollow(req, res) {
-   var params = req.body;
+    var params = req.body;
 
-   follow.userId = req.user.sub;
-   follow.followId = params.followed;
-   
-   Follow.addFollow(follow, function(err, resultado){
-       if(err) return res.status(500).send({message: 'Error al Guardar el seguimiento'});
+    follow.userId = req.user.sub;
+    follow.followId = params.followed;
 
-       if (!resultado)  return res.status(404).send({message: 'El seguimiento no se ha Guardado'});
+    Follow.addFollow(follow, function(err, resultado) {
+        if (err) return res.status(500).send({ message: 'Error al Guardar el seguimiento' });
 
-       return res.status(200).send({message: 'Followed Eliminado'});
-  
-   });
-}   
+        if (!resultado) return res.status(404).send({ message: 'El seguimiento no se ha Guardado' });
 
-function deleteFollow(req, res) {
-   var userId = req.user.sub;
-   var followId = req.params.id;
-
-    Follow.delFollow(userId, followId, function(err, resultado){
-    if(err) return res.status(500).send({message: 'Error al Borrar el seguimiento'});
-
-    if (!resultado)  return res.status(404).send({message: 'El seguimiento no se ha Borrado'});
-
-    return res.status(200).send({follow: resultado.rowsAffected});
+        return res.status(200).send({ message: 'Followed Eliminado' });
 
     });
 }
 
+function deleteFollow(req, res) {
+    var userId = req.user.sub;
+    var followId = req.params.id;
+
+    Follow.delFollow(userId, followId, function(err, resultado) {
+        if (err) return res.status(500).send({ message: 'Error al Borrar el seguimiento' });
+
+        if (!resultado) return res.status(404).send({ message: 'El seguimiento no se ha Borrado' });
+
+        return res.status(200).send({ follow: resultado.rowsAffected });
+
+    });
+}
+
+// Devolver usuarios que sigo
 function getMyFollows(req, res) {
     var userId = req.user.sub;
-    
-    if (req.params.id){
+
+    if (req.params.id) {
         userId = req.params.id;
     }
 
@@ -52,22 +53,25 @@ function getMyFollows(req, res) {
                FROM    Follows LEFT OUTER JOIN
                        Users ON Follows.followed = Users.userId
                WHERE   Follows.userId=` + userId;
-     
 
-    xsql.executeSql(sql, function(err, resultado){
-        if(err) return res.status(500).send({message: 'Error en el Servidor'});
 
-        if (!resultado)  return res.status(404).send({message: 'No estas siguiendo ningun usuario'});
-    
-        return res.status(200).send({user: userId,
-                                     following: resultado.recordset});
+    xsql.executeSql(sql, function(err, resultado) {
+        if (err) return res.status(500).send({ message: 'Error en el Servidor' });
+
+        if (!resultado) return res.status(404).send({ message: 'No estas siguiendo ningun usuario' });
+
+        return res.status(200).send({
+            user: userId,
+            following: resultado.recordset
+        });
     });
 }
 
-function getYourFollows(req, res){
+// Devolver usuarios que me siguen
+function getFollowBacks(req, res) {
     var userId = req.user.sub;
-    
-    if (req.params.id){
+
+    if (req.params.id) {
         userId = req.params.id;
     }
 
@@ -76,14 +80,16 @@ function getYourFollows(req, res){
                FROM    Follows LEFT OUTER JOIN
                Users ON Follows.userId = Users.userId
                WHERE   Follows.followed=` + userId;
-     
-    xsql.executeSql(sql, function(err, resultado){
-        if(err) return res.status(500).send({message: 'Error en el Servidor'});
 
-        if (!resultado)  return res.status(404).send({message: 'No estas siguiendo ningun usuario'});
-    
-        return res.status(200).send({user: userId,
-                                     followed: resultado.recordset});
+    xsql.executeSql(sql, function(err, resultado) {
+        if (err) return res.status(500).send({ message: 'Error en el Servidor' });
+
+        if (!resultado) return res.status(404).send({ message: 'No te sigue ningun usuario' });
+
+        return res.status(200).send({
+            user: userId,
+            followed: resultado.recordset
+        });
     });
 }
 
@@ -91,5 +97,5 @@ module.exports = {
     saveFollow,
     deleteFollow,
     getMyFollows,
-    getYourFollows
+    getFollowBacks
 }

@@ -20,7 +20,7 @@ function home(req, res) {
 
 function saveUser(req, res) {
     var params = req.body;
-   
+
     if (params.name && params.surname && params.nick && params.email && params.password) {
         user.name = params.name;
         user.surname = params.surname;
@@ -33,15 +33,15 @@ function saveUser(req, res) {
             user.password = hash;
         });
 
-        var sql = "select * from users WHERE email='"+ user.email +"' or nick='" + user.nick + "'";
+        var sql = "select * from users WHERE email='" + user.email + "' or nick='" + user.nick + "'";
 
-        xsql.executeSql(sql, function(err, resultado) {   
+        xsql.executeSql(sql, function(err, resultado) {
             if (err) {
 
                 return res.status(200).send({
                     message: err.originalError.message
                 });
-            }          
+            }
 
             if (resultado.rowsAffected != 0) {
                 return res.status(200).send({
@@ -78,7 +78,7 @@ function loginUser(req, res) {
         var email = params.email;
         var password = params.password;
 
-        var sql ="select * from users WHERE email='" + email +"'";
+        var sql = "select * from users WHERE email='" + email + "'";
         xsql.executeSql(sql, function(err, resultado) {
 
             if (err) {
@@ -95,9 +95,9 @@ function loginUser(req, res) {
                 bcrypt.compare(password, resultado.recordset[0].password, (err, check) => {
                     if (check) {
                         // generar y devolver token
-                                               
+
                         return res.status(200).send({
-                           token: jwt.createToken(resultado.recordset[0])
+                            token: jwt.createToken(resultado.recordset[0])
                         });
 
                     } else {
@@ -116,10 +116,10 @@ function loginUser(req, res) {
     }
 }
 
-function getUser(req, res){
+function getUser(req, res) {
     var userId = req.params.id;
 
-    var sql ="select * from users WHERE userId=" + userId;
+    var sql = "select * from users WHERE userId=" + userId;
     xsql.executeSql(sql, function(err, resultado) {
         if (err) {
             return res.status(500).send({
@@ -131,132 +131,177 @@ function getUser(req, res){
             return res.status(404).send({
                 message: 'El Usuario no existe'
             });
-        } 
+        }
 
         resultado.recordset[0].password = undefined;
 
-        res.status(200).send({                            
-            message: resultado.recordset[0]
-        });          
+        var sql = `SELECT  Follows.UserId, Users.name, Users.surname, 
+                Users.nick, Users.email, Users.role, Users.image
+                FROM    Follows LEFT OUTER JOIN
+                Users ON Follows.userId = Users.userId
+                WHERE   Follows.followed=` + userId;
+
+        xsql.executeSql(sql, function(err, followed) {
+            if (err) return res.status(500).send({ message: 'Error en el Servidor' });
+
+            if (!followed) return res.status(404).send({ message: 'No te sigue ningun usuario' });
+
+            return res.status(200).send({
+                user: resultado.recordset[0],
+                followed: followed.recordset
+            });
+        });
     });
 }
 
-function getUsers(req,res){
-   // Usuario que esta logueado
-   var identity_user_id = req.user.sub;
-   
-   var page = 1;
-   if(req.params.page) {
-      page = req.params.page; 
-   }
+async function followThisUser(identity_user_id, user_id) {
 
-   var itemsPage = 5;
+    var sql = `SELECT  Follows.UserId, Users.name, Users.surname, 
+        Users.nick, Users.email, Users.role, Users.image
+        FROM    Follows LEFT OUTER JOIN
+        Users ON Follows.userId = Users.userId
+        WHERE   Follows.followed=` + identity_user_id;
 
-   var sql ="select * from users ORDER by userId";
-   xsql.executeSql(sql, function(err, resultado) {
-    if (err) {
-        return res.status(500).send({
-            message: err.originalError.message
-        });
+    var followeb = await xsql.executeSql(sql, function(err, followed) {
+        if (err) return handelError(err);
+        return followed.recordset;
+    });
+
+    var sql = `SELECT  Follows.followedId, Users.userId, Users.name, Users.surname, 
+        Users.nick, Users.email,Users.image
+        FROM    Follows LEFT OUTER JOIN
+        Users ON Follows.followed = Users.userId
+        WHERE   Follows.userId=` + user_id;
+
+    var following = await xsql.executeSql(sql, function(err, followed) {
+        if (err) return handelError(err);
+        return followed.recordset
+    });
+
+    return {
+        followind: following,
+        followed: followeb
     }
-
-    if (!resultado) {
-        return res.status(404).send({
-            message: 'Tabla sin Usuarios'
-        });
-    } 
-
-    for (let index = 0; index < resultado.rowsAffected; index++) {
-         resultado.recordset[index].password = undefined;
-    }
-   
-    res.status(200).send({                            
-       user: resultado.recordset       
-    });            
-   }); 
 }
 
-function updateUser(req,res){
+function getUsers(req, res) {
+    // Usuario que esta logueado
+    var identity_user_id = req.user.sub;
+
+    var page = 1;
+    if (req.params.page) {
+        page = req.params.page;
+    }
+
+    var itemsPage = 5;
+
+    var sql = "select * from users ORDER by userId";
+    xsql.executeSql(sql, function(err, resultado) {
+        if (err) {
+            return res.status(500).send({
+                message: err.originalError.message
+            });
+        }
+
+        if (!resultado) {
+            return res.status(404).send({
+                message: 'Tabla sin Usuarios'
+            });
+        }
+
+        for (let index = 0; index < resultado.rowsAffected; index++) {
+            resultado.recordset[index].password = undefined;
+        }
+
+        res.status(200).send({
+            user: resultado.recordset
+        });
+    });
+}
+
+
+
+function updateUser(req, res) {
     var userId = req.params.id;
     var update = req.body;
 
-   
-    if (userId != req.user.sub){
+
+    if (userId != req.user.sub) {
         return res.status(500).send({
             message: 'No tienen permiso para actualizar los datos del usuario'
         });
     }
-   
+
     userService.UsuarioByIdUpdate(userId, update, function(err, resultado) {
         if (err) {
             return res.status(500).send({
                 message: err.originalError.message
             });
         }
-    
+
         if (!resultado) {
             return res.status(404).send({
                 message: 'No se actualizo el Usuario'
             });
-        } 
-    
-        res.status(200).send({                            
-           user: resultado          
-        });            
-    }); 
+        }
+
+        res.status(200).send({
+            user: resultado
+        });
+    });
 }
 
-function uploadImage(req,res){
+function uploadImage(req, res) {
     var userId = req.params.id;
- 
-    if (userId != req.user.sub){
-       return removeFileOfuploads(res,file_name, 'No tiene permisos para realizar esta operacion');                        
+
+    if (userId != req.user.sub) {
+        return removeFileOfuploads(res, file_name, 'No tiene permisos para realizar esta operacion');
     }
 
-    if (req.files){
-        var file_path = req.files.image.path;               
+    if (req.files) {
+        var file_path = req.files.image.path;
 
         var file_split = file_path.split('\\');
 
         var file_name = file_split[3];
-  
+
         var ext_split = file_name.split('\.');
 
         var file_ext = ext_split[1];
 
-        if(file_ext == 'png' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif' ){
-             userService.UsuarioByIdUpdateImg(userId,file_name, req.user.image ,function(err, resultado){
+        if (file_ext == 'png' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif') {
+            userService.UsuarioByIdUpdateImg(userId, file_name, req.user.image, function(err, resultado) {
 
-                resultado.recordset[0].password = undefined;                
+                resultado.recordset[0].password = undefined;
                 return res.status(200).send(resultado.recordset[0]);
-             });
-        }else {
-           return removeFileOfuploads(res,file_name, 'Imagen Incorrecta');
+            });
+        } else {
+            return removeFileOfuploads(res, file_name, 'Imagen Incorrecta');
         }
 
-    }else {
+    } else {
         return res.status(200).send({
             message: 'No se han subido imagenes'
         });
     }
 }
 
-function removeFileOfuploads(res,file_path, message) {
-    fs.unlink(file_path, (err)=> {              
-        return res.status(200).send({message: message});                             
-    });                    
+function removeFileOfuploads(res, file_path, message) {
+    fs.unlink(file_path, (err) => {
+        return res.status(200).send({ message: message });
+    });
 }
 
-function getImageFile(req,res){
+function getImageFile(req, res) {
     var image_file = req.params.imageFile;
     var path_file = './assets/images/users/' + image_file;
 
-    fs.exists(path_file, function(exists){
-       if(exists){
-           res.sendFile(path.resolve(path_file));
-       } else {
-        return res.status(200).send({message: 'No existe la Imagen'});  
-       }
+    fs.exists(path_file, function(exists) {
+        if (exists) {
+            res.sendFile(path.resolve(path_file));
+        } else {
+            return res.status(200).send({ message: 'No existe la Imagen' });
+        }
     });
 }
 
