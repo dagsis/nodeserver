@@ -3,6 +3,8 @@
 var path = require('path');
 var fs = require('fs');
 
+var xsql = require('../helpers/helper');
+
 var User = require('../models/user');
 var Follow = require('../models/follow');
 
@@ -38,7 +40,56 @@ function deleteFollow(req, res) {
     });
 }
 
+function getMyFollows(req, res) {
+    var userId = req.user.sub;
+    
+    if (req.params.id){
+        userId = req.params.id;
+    }
+
+    var sql = `SELECT  Follows.followedId, Users.userId, Users.name, Users.surname, 
+                       Users.nick, Users.email,Users.image
+               FROM    Follows LEFT OUTER JOIN
+                       Users ON Follows.followed = Users.userId
+               WHERE   Follows.userId=` + userId;
+     
+
+    xsql.executeSql(sql, function(err, resultado){
+        if(err) return res.status(500).send({message: 'Error en el Servidor'});
+
+        if (!resultado)  return res.status(404).send({message: 'No estas siguiendo ningun usuario'});
+    
+        return res.status(200).send({user: userId,
+                                     following: resultado.recordset});
+    });
+}
+
+function getYourFollows(req, res){
+    var userId = req.user.sub;
+    
+    if (req.params.id){
+        userId = req.params.id;
+    }
+
+    var sql = `SELECT  Follows.UserId, Users.name, Users.surname, 
+               Users.nick, Users.email, Users.role, Users.image
+               FROM    Follows LEFT OUTER JOIN
+               Users ON Follows.userId = Users.userId
+               WHERE   Follows.followed=` + userId;
+     
+    xsql.executeSql(sql, function(err, resultado){
+        if(err) return res.status(500).send({message: 'Error en el Servidor'});
+
+        if (!resultado)  return res.status(404).send({message: 'No estas siguiendo ningun usuario'});
+    
+        return res.status(200).send({user: userId,
+                                     followed: resultado.recordset});
+    });
+}
+
 module.exports = {
     saveFollow,
-    deleteFollow
+    deleteFollow,
+    getMyFollows,
+    getYourFollows
 }
