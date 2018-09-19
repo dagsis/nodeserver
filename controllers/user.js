@@ -9,6 +9,8 @@ var xsql = require('../helpers/helper');
 
 var jwt = require('../services/jwt');
 
+
+
 // Creo el Modelo
 var user = userService.user;
 
@@ -119,9 +121,9 @@ function loginUser(req, res) {
 function getUser(req, res) {
     var userId = req.params.id;
 
-    var sql = "select * from users WHERE userId=" + userId;
-    xsql.executeSql(sql, function(err, resultado) {
-        if (err) {
+    var sql = "select * from users WHERE userId=" + req.user.sub;
+    xsql.executeSql(sql).then((resultado, rej) => {
+        if (rej) {
             return res.status(500).send({
                 message: err.originalError.message
             });
@@ -135,24 +137,19 @@ function getUser(req, res) {
 
         resultado.recordset[0].password = undefined;
 
-        var sql = `SELECT  Follows.UserId, Users.name, Users.surname, 
-                Users.nick, Users.email, Users.role, Users.image
-                FROM    Follows LEFT OUTER JOIN
-                Users ON Follows.userId = Users.userId
-                WHERE   Follows.followed=` + userId;
-
-        xsql.executeSql(sql, function(err, followed) {
-            if (err) return res.status(500).send({ message: 'Error en el Servidor' });
-
-            if (!followed) return res.status(404).send({ message: 'No te sigue ningun usuario' });
-
+        followThisUser(userId, req.user.sub).then((value) => {
             return res.status(200).send({
                 user: resultado.recordset[0],
-                followed: followed.recordset
+                following: value.followind,
+                followeb: value.followeb
             });
         });
     });
+
 }
+
+var sqlDb = require('mssql');
+var settings = require('../setting');
 
 async function followThisUser(identity_user_id, user_id) {
 
@@ -162,26 +159,30 @@ async function followThisUser(identity_user_id, user_id) {
         Users ON Follows.userId = Users.userId
         WHERE   Follows.followed=` + identity_user_id;
 
-    var followeb = await xsql.executeSql(sql, function(err, followed) {
-        if (err) return handelError(err);
-        return followed.recordset;
+    var followeb = await xsql.executeSql(sql).then((res, rej) => {
+        if (rej) return handleError(rej);
+        return res.recordset
     });
 
     var sql = `SELECT  Follows.followedId, Users.userId, Users.name, Users.surname, 
-        Users.nick, Users.email,Users.image
-        FROM    Follows LEFT OUTER JOIN
-        Users ON Follows.followed = Users.userId
-        WHERE   Follows.userId=` + user_id;
+         Users.nick, Users.email,Users.image
+         FROM    Follows LEFT OUTER JOIN
+         Users ON Follows.followed = Users.userId
+         WHERE   Follows.userId=` + user_id;
 
-    var following = await xsql.executeSql(sql, function(err, followed) {
-        if (err) return handelError(err);
-        return followed.recordset
+    var followind = await xsql.executeSql(sql).then((res, rej) => {
+        if (rej) return handleError(rej);
+        return res.recordset
     });
 
+
+
     return {
-        followind: following,
-        followed: followeb
+        //  followind: following,
+        followeb: followeb,
+        followind: followind
     }
+
 }
 
 function getUsers(req, res) {

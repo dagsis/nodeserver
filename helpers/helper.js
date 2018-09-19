@@ -3,27 +3,33 @@
 var sqlDb = require('mssql');
 var settings = require('../setting');
 
-exports.executeSql = function (sql, callback) {
-   
-   sqlDb.connect(settings.dbConfig).then(function () {
-      var req = new sqlDb.Request();
+//sqlDb.Promise = global.Promise;
 
-      req.query(sql).then(function(recordset){
+let executeSql = (sql) => {
 
-           console.log(recordset);
-          
-           sqlDb.close();             
-           callback(null, recordset);
-           
-      }).catch(function(err){
-        console.log('Error query '+ err); 
-        sqlDb.close();  
-        callback(err);
-      });
+    return new Promise((res, rej) => {
+        sqlDb.connect(settings.dbConfig).then(function() {
+            var req = new sqlDb.Request();
 
-   }).catch(function(err){
-       console.log('Error Conec'+ err);
-       callback(err);
-   })
+            req.query(sql).then(function(recordset) {
+                sqlDb.close();
+                res(recordset);
 
+            }).catch(function(err) {
+                console.log('Error query ' + err);
+                sqlDb.close();
+                rej(err);
+            });
+        }).catch(function(err) {
+            sqlDb.close();
+            console.log('Error Conec' + err);
+            rej(err);
+        });
+
+    });
+
+}
+
+module.exports = {
+    executeSql
 }
