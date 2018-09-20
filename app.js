@@ -9,6 +9,7 @@ var app = express();
 
 var user_routes = require('./routes/user');
 var follow_routes = require('./routes/follow');
+var publication_routes = require('./routes/publication');
 
 
 // middewares
@@ -41,6 +42,7 @@ app.use(function(req, res, next) {
 // rutas
 app.use('/redsocial', user_routes);
 app.use('/redsocial/follow', follow_routes);
+app.use('/redsocial/publication',publication_routes);
 
 // export
 module.exports = app;
