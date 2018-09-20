@@ -3,8 +3,6 @@
 var sqlDb = require('mssql');
 var settings = require('../setting');
 
-//sqlDb.Promise = global.Promise;
-
 let executeSql = (sql) => {
 
     return new Promise((res, rej) => {
