@@ -9,5 +9,6 @@ var multipart = require('connect-multiparty');
 var md_upload = multipart({uploadDir: './assets/images/publication'});
 
 api.post('/publication', md_auth.ensureAuth, PublicationController.savePublication);
+api.get('/publications/:page?', md_auth.ensureAuth, PublicationController.getPublications);
 
 module.exports = api;

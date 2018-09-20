@@ -35,9 +35,30 @@ function savePublication(req,res){
 }
 
 function getPublications(req,res){
-   
+   var page = 1;
+   if(req.params.page){
+       page = req.params.page;       
+   }
+   var itemsPerPage = 4;
+
+  var sql= `SELECT   Publications.publicationId, Publications.text, Publications.file_at, Publications.created_at, Users.userId, Users.name, Users.surname, Users.nick, Users.email, 
+                      Users.image
+            FROM    Publications INNER JOIN
+                      Users ON Publications.userId = Users.userId
+            WHERE     (Publications.userId =`+ req.user.sub + `)
+            ORDER BY Publications.created_at DESC`
+
+    herlper.executeSql(sql).then((resultado,rej)=>{       
+            if (rej) return handleError(rej);             
+         return res.status(200).send({
+               publications: resultado.recordset
+        }); 
+    });
+
+
 }
 
 module.exports = {
-    savePublication
+    savePublication,
+    getPublications
 }

@@ -55,8 +55,8 @@ function getMyFollows(req, res) {
                WHERE   Follows.userId=` + userId;
 
 
-    xsql.executeSql(sql, function(err, resultado) {
-        if (err) return res.status(500).send({ message: 'Error en el Servidor' });
+    xsql.executeSql(sql).then((resultado,rej)=>{ 
+        if (rej) return res.status(500).send({ message: 'Error en el Servidor' });
 
         if (!resultado) return res.status(404).send({ message: 'No estas siguiendo ningun usuario' });
 
@@ -81,8 +81,8 @@ function getFollowBacks(req, res) {
                Users ON Follows.userId = Users.userId
                WHERE   Follows.followed=` + userId;
 
-    xsql.executeSql(sql, function(err, resultado) {
-        if (err) return res.status(500).send({ message: 'Error en el Servidor' });
+    xsql.executeSql(sql).then((resultado,rej) => {
+        if (rej) return res.status(500).send({ message: 'Error en el Servidor' });
 
         if (!resultado) return res.status(404).send({ message: 'No te sigue ningun usuario' });
 
