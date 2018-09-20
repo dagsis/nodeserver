@@ -40,23 +40,31 @@ function getPublications(req,res){
        page = req.params.page;       
    }
    var itemsPerPage = 4;
+   var sql =`SELECT Follows.followed, Users.name, Users.surname, Users.nick, Users.email, Users.role, Users.image
+    FROM   Follows LEFT OUTER JOIN
+           Users ON Follows.followed = Users.userId
+    WHERE  Follows.userId =` + req.user.sub;
 
-  var sql= `SELECT   Publications.publicationId, Publications.text, Publications.file_at, Publications.created_at, Users.userId, Users.name, Users.surname, Users.nick, Users.email, 
-                      Users.image
-            FROM    Publications INNER JOIN
-                      Users ON Publications.userId = Users.userId
-            WHERE     (Publications.userId =`+ req.user.sub + `)
-            ORDER BY Publications.created_at DESC`
+    herlper.executeSql(sql).then((resultado,rej)=>{ 
+        if (rej) return res.status(500).send({ message: 'Error en el Servidor' });
 
-    herlper.executeSql(sql).then((resultado,rej)=>{       
-            if (rej) return handleError(rej);             
-         return res.status(200).send({
-               publications: resultado.recordset
-        }); 
+        if (!resultado) return res.status(404).send({ message: 'No estas siguiendo ningun usuario' });
+
+        
+
+        var follows_clean = [];
+        resultado.recordset.forEach(follow => {
+            follows_clean.push(follow)
+        });
+
+        console.log(follows_clean);
+
     });
-
-
+ 
 }
+
+
+
 
 module.exports = {
     savePublication,
