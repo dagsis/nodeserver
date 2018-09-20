@@ -197,10 +197,10 @@ function getUsers(req, res) {
     var itemsPage = 5;
 
     var sql = "select * from users ORDER by userId";
-    xsql.executeSql(sql, function(err, resultado) {
-        if (err) {
+    xsql.executeSql(sql).then((resultado, rej) => {
+        if (rej) {
             return res.status(500).send({
-                message: err.originalError.message
+                message: rej.originalError.message
             });
         }
 
@@ -214,13 +214,89 @@ function getUsers(req, res) {
             resultado.recordset[index].password = undefined;
         }
 
-        res.status(200).send({
-            user: resultado.recordset
+        followUserIds(identity_user_id).then((value) => {
+            console.log(value.following);
+            return res.status(200).send({
+
+
+                user: resultado.recordset,
+                users_following: value.following,
+                users_follow_me: value.followed
+            });
         });
     });
 }
 
+async function followUserIds(user_id) {
+    var sql = `SELECT  followed
+               FROM    Follows 
+               WHERE   userId=` + user_id;
 
+    var following = await xsql.executeSql(sql).then((res, rej) => {
+        if (rej) return handleError(rej);
+        var follows_clean = [];
+        res.recordset.forEach((follow) => {
+            follows_clean.push(follow.followed)
+        })
+        return follows_clean;
+    });
+
+
+    var sql = `SELECT userId
+        FROM    Follows 
+        WHERE   followed=` + user_id;
+    var followed = await xsql.executeSql(sql).then((res, rej) => {
+        if (rej) return handleError(rej);
+
+        var follows_clean = [];
+        res.recordset.forEach((follow) => {
+            follows_clean.push(follow.userId)
+        })
+        return follows_clean;
+    });
+
+    return {
+        following: following,
+        followed: followed
+    }
+}
+
+function getCounters(req, res) {
+    var user_id = req.user.sub;
+
+    if (req.params.id) {
+        user_id = req.params.id;
+    }
+    getCountFollow(user_id).then((value) => {
+        return res.status(200).send(value);
+    });
+
+}
+
+async function getCountFollow(user_id) {
+    var sql = `SELECT  Count(followed) as cantidad
+    FROM    Follows 
+    WHERE   userId=` + user_id;
+
+    var following = await xsql.executeSql(sql).then((res, rej) => {
+        if (rej) return handleError(rej);
+        return res.recordset[0].cantidad;
+    });
+
+    var sql = `SELECT  Count(followed) as cantidad
+    FROM    Follows 
+    WHERE   followed=` + user_id;
+
+    var followed = await xsql.executeSql(sql).then((res, rej) => {
+        if (rej) return handleError(rej);
+        return res.recordset[0].cantidad;
+    });
+
+    return {
+        following: following,
+        followed: followed
+    }
+}
 
 function updateUser(req, res) {
     var userId = req.params.id;
@@ -312,6 +388,7 @@ module.exports = {
     loginUser,
     getUser,
     getUsers,
+    getCounters,
     updateUser,
     uploadImage,
     getImageFile
