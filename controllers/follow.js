@@ -21,7 +21,7 @@ function saveFollow(req, res) {
 
         if (!resultado) return res.status(404).send({ message: 'El seguimiento no se ha Guardado' });
 
-        return res.status(200).send({ message: 'Followed Eliminado' });
+        return res.status(200).send({ message: 'Seguimiento Agregado' });
 
     });
 }
