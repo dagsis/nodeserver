@@ -292,9 +292,19 @@ async function getCountFollow(user_id) {
         return res.recordset[0].cantidad;
     });
 
+    var sql = `SELECT  Count(publicationId) as cantidad
+    FROM    Publications 
+    WHERE   userId=` + user_id;
+
+    var publications = await xsql.executeSql(sql).then((res, rej) => {
+        if (rej) return handleError(rej);
+        return res.recordset[0].cantidad;
+    });
+
     return {
         following: following,
-        followed: followed
+        followed: followed,
+        publications: publications
     }
 }
 

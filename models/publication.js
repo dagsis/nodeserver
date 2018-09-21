@@ -42,3 +42,48 @@ module.exports.save = function(publication, done) {
     });
 }
 
+module.exports.publicationByIdUpdateImg = function(publicationId, fileName, fileNameOld, done) {
+    sql.connect(config).then(() => {
+
+        var request = new sql.Request();
+
+        request.input('id', sql.Int, publicationId);
+        request.input('image', sql.VarChar, fileName);      
+        request.query('UPDATE Publications SET image=@image where publicationId=@id',
+            function(err) {
+                
+                if (err) {
+                    return done(err, null);
+                }
+
+                request.input('id', sql.Int, publicationId);
+                request.query('select * from publications WHERE publicationId=@id',
+                    function(err, recordset) {
+                      
+                        if (err) {
+                            return done(err, null);
+                        }
+        
+                        if (recordset.rowsAffected == 0) {
+                            return done(null, null);
+                        }
+        
+                sql.close();
+
+               console.log(fileNameOld);
+
+                if(fileNameOld){
+                    var filePath = './assets/images/publication/' + fileNameOld;
+                    fs.unlink(filePath, (err)=> {              
+                        return done(null, recordset);                          
+                    });   
+                }else {
+                    return done(null, recordset)
+                }
+            });
+        });                
+    }).catch((err) => {
+        return done(err, null);
+    });
+}
+

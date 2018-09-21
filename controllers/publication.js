@@ -65,11 +65,108 @@ function getPublications(req, res) {
     });
 }
 
+function getPublication(req, res) {
+    var publicationId = req.params.id;
 
+    var sql = "SELECT * FROM Publications WHERE PublicationId=" + publicationId
+    
+    herlper.executeSql(sql).then((resultado, rej) => {
+        if (rej) return res.status(500).send({ message: 'Error en el Servidor' });
 
+        if (resultado.rowsAffected == 0) return res.status(404).send({ message: 'No Existe la Publicación' });
 
+        return res.status(200).send({
+          publication: resultado.recordset[0]
+        })
+    });
+}
+
+function deletePublication(req, res) {
+    var publicationId = req.params.id;
+
+    var sql = `DELETE FROM Publications WHERE PublicationId=` + publicationId + `
+               AND userId=` + req.user.sub
+    
+    herlper.executeSql(sql).then((resultado, rej) => {
+        if (rej) return res.status(500).send({ message: 'Error en el Servidor' });
+
+        if (resultado.rowsAffected == 0) return res.status(404).send({ message: 'No Existe la Publicación' });
+
+        return res.status(200).send({
+          message: 'Publicación Eliminada'
+        })
+    });
+}
+
+function uploadImage(req, res) {
+    var publicationId = req.params.id;
+
+    if (userId != req.user.sub) {
+        return removeFileOfuploads(res, file_name, 'No tiene permisos para realizar esta operacion');
+    }
+
+    if (req.files) {
+        var file_path = req.files.image.path;
+
+        var file_split = file_path.split('\\');
+
+        var file_name = file_split[3];
+
+        var ext_split = file_name.split('\.');
+
+        var file_ext = ext_split[1];
+
+        if (file_ext == 'png' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif') {
+            herlper.executeSql(sql).then((resultado)=>{
+
+               var sql = "SELECT * FROM publications WHERE publicationId=" + publicationId + " AND userId=" +req.user.sub
+
+               if (resultado.rowsAffected != 0){
+                   Publication.publicationByIdUpdateImg(publicationId ,file_name, req.user.image, function(err, resultado) {
+
+                    resultado.recordset[0].password = undefined;
+                    return res.status(200).send(resultado.recordset[0]);
+                    });
+               }else {
+                    return removeFileOfuploads(res, file_name, 'No tiene permiso para realizar esta operación');
+               } 
+            });
+          
+        } else {
+            return removeFileOfuploads(res, file_name, 'Imagen Incorrecta');
+        }
+
+    } else {
+        return res.status(200).send({
+            message: 'No se han subido imagenes'
+        });
+    }
+}
+
+function removeFileOfuploads(res, file_path, message) {
+    fs.unlink(file_path, (err) => {
+        return res.status(200).send({ message: message });
+    });
+}
+
+function getImageFile(req, res) {
+    var image_file = req.params.imageFile;
+    var path_file = './assets/images/publications/' + image_file;
+
+    fs.exists(path_file, function(exists) {
+        if (exists) {
+            res.sendFile(path.resolve(path_file));
+        } else {
+            return res.status(200).send({ message: 'No existe la Imagen' });
+        }
+    });
+}
 
 module.exports = {
     savePublication,
-    getPublications
+    getPublications,
+    getPublication,
+    deletePublication,
+    uploadImage,
+    getImageFile
 }
