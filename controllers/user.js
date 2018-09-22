@@ -37,17 +37,19 @@ function saveUser(req, res) {
 
         var sql = "select * from users WHERE email='" + user.email + "' or nick='" + user.nick + "'";
 
-        xsql.executeSql(sql, function(err, resultado) {
-            if (err) {
+        xsql.executeSql(sql).then((resultado, rej) => {
+            if (rej) {
 
                 return res.status(200).send({
+                    status: 'error',
                     message: err.originalError.message
                 });
-            }
+            };
 
             if (resultado.rowsAffected != 0) {
                 return res.status(200).send({
-                    mensage: 'El Usuario ya esta registrado en la base de datos'
+                    status: 'error',
+                    message: 'El Usuario ya esta registrado en la base de datos'
                 });
             } else {
 
@@ -55,10 +57,12 @@ function saveUser(req, res) {
 
                     if (resultado) {
                         res.status(200).send({
+                            status: 'success',
                             message: 'Registro Agregado Correctamente'
                         });
                     } else {
                         res.status(200).send({
+                            status: 'error',
                             message: err.originalError.message
                         });
                     }
@@ -67,6 +71,7 @@ function saveUser(req, res) {
         });
     } else {
         res.status(200).send({
+            status: 'error',
             message: 'Todos los Campos son Obligarios'
         });
     }
