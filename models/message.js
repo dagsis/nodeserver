@@ -30,6 +30,7 @@ module.exports.saveMessage = function(message, done) {
                        VALUES (@emitter,@receiver,@text,@created_at,@viewed)`,
             function(err, recordset) {
                 if (err) {
+                    sql.close();
                     return done(err, null);
                 }
 
@@ -39,8 +40,8 @@ module.exports.saveMessage = function(message, done) {
                               ORDER BY messageId DESC`,
 
                     function(err, recordset) {
+                      
                         sql.close();
-
                         return done(null, recordset);
                     });
             });

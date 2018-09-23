@@ -87,7 +87,7 @@ function loginUser(req, res) {
 
         var sql = "select * from users WHERE email='" + email + "'";
         xsql.executeSql(sql).then((resultado,rej) => {
-
+            
             if (rej) {
                 return res.status(200).send({
                     status: 'error',
@@ -95,7 +95,7 @@ function loginUser(req, res) {
                 });
             }
 
-            if (!resultado) {
+            if (resultado.rowsAffected == 0) {
                 res.status(200).send({
                     status: 'error',
                     message: 'Usuario Inexistente'
@@ -103,10 +103,13 @@ function loginUser(req, res) {
             } else {
                 bcrypt.compare(password, resultado.recordset[0].password, (err, check) => {
                     if (check) {
-                        // generar y devolver token
+                     
+                        resultado.recordset[0].password = undefined;
 
                         return res.status(200).send({
-                            token: jwt.createToken(resultado.recordset[0])
+                            status: 'success',
+                            token: jwt.createToken(resultado.recordset[0]),
+                            user: resultado.recordset[0]
                         });
 
                     } else {
@@ -126,6 +129,7 @@ function loginUser(req, res) {
         });
     }
 }
+
 
 function getUser(req, res) {
     var userId = req.params.id;
@@ -331,17 +335,21 @@ function updateUser(req, res) {
     userService.UsuarioByIdUpdate(userId, update, function(err, resultado) {
         if (err) {
             return res.status(500).send({
+                status: 'error',
                 message: err.originalError.message
             });
         }
 
         if (!resultado) {
             return res.status(404).send({
+                status: 'error',
                 message: 'No se actualizo el Usuario'
             });
         }
 
         res.status(200).send({
+            status: 'success',
+            message: 'Usuario Actualizado con Exito',
             user: resultado
         });
     });
