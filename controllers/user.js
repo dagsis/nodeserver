@@ -86,16 +86,18 @@ function loginUser(req, res) {
         var password = params.password;
 
         var sql = "select * from users WHERE email='" + email + "'";
-        xsql.executeSql(sql, function(err, resultado) {
+        xsql.executeSql(sql).then((resultado,rej) => {
 
-            if (err) {
+            if (rej) {
                 return res.status(200).send({
+                    status: 'error',
                     message: err.originalError.message
                 });
             }
 
             if (!resultado) {
                 res.status(200).send({
+                    status: 'error',
                     message: 'Usuario Inexistente'
                 });
             } else {
@@ -109,6 +111,7 @@ function loginUser(req, res) {
 
                     } else {
                         res.status(200).send({
+                            status: 'error',
                             message: 'Contraseña Invalida'
                         });
                     }
@@ -118,6 +121,7 @@ function loginUser(req, res) {
 
     } else {
         res.status(200).send({
+            status: 'error',
             message: 'Todos los Campos son Obligarios'
         });
     }
