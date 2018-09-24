@@ -4,6 +4,8 @@ var sql = require('mssql');
 var settings = require('../setting');
 
 var config = settings.dbConfig;
+var fs = require('fs');
+var path = require('path');
 
 sql.Promise = global.Promise;
 
@@ -104,7 +106,7 @@ module.exports.UsuarioByIdUpdate = function(userId,user,done) {
     });
 }
 
-module.exports.UsuarioByIdUpdateImg = function(userId, fileName, fileNameOld, done) {
+module.exports.UsuarioByIdUpdateImg = function(userId, fileName, fileNameOld ,done) {
     sql.connect(config).then(() => {
 
         var request = new sql.Request();

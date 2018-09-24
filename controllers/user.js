@@ -362,6 +362,7 @@ function uploadImage(req, res) {
         return removeFileOfuploads(res, file_name, 'No tiene permisos para realizar esta operacion');
     }
 
+
     if (req.files) {
         var file_path = req.files.image.path;
 
@@ -374,7 +375,11 @@ function uploadImage(req, res) {
         var file_ext = ext_split[1];
 
         if (file_ext == 'png' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif') {
-            userService.UsuarioByIdUpdateImg(userId, file_name, req.user.image, function(err, resultado) {
+            if(req.user.image != null){
+               
+            }
+
+            userService.UsuarioByIdUpdateImg(userId, file_name, req.user.image ,function(err, resultado) {
 
                 resultado.recordset[0].password = undefined;
                 return res.status(200).send(resultado.recordset[0]);
