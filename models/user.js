@@ -54,7 +54,8 @@ module.exports.addUsuario = function(user, done) {
     });
 }
 
-module.exports.UsuarioByIdUpdate = function(userId,user,done) {
+module.exports.UsuarioByIdUpdate = function(userId, user, done) {
+
     sql.connect(config).then(() => {
 
         var request = new sql.Request();
@@ -62,7 +63,7 @@ module.exports.UsuarioByIdUpdate = function(userId,user,done) {
         request.input('id', sql.Int, userId);
         request.query('select * from users WHERE userId=@id',
             function(err, recordset) {
-              
+
                 if (err) {
                     return done(err, null);
                 }
@@ -77,11 +78,11 @@ module.exports.UsuarioByIdUpdate = function(userId,user,done) {
                 request.input('surname', sql.VarChar, user.surname);
                 request.input('nick', sql.VarChar, user.nick);
                 request.input('email', sql.VarChar, user.email);
-              
+
                 request.query('UPDATE Users SET name=@name,surname=@surname,nick=@nick,email=@email where userId=@id',
                     function(err, recordset) {
 
-                        console.log( recordset);
+                        console.log(recordset);
 
                         sql.close();
 
@@ -90,11 +91,11 @@ module.exports.UsuarioByIdUpdate = function(userId,user,done) {
                         }
 
                         var updateUser = {
-                            id: userId, 
-                                name: user.name,
-                                surname: user.surname,
-                                nick: user.nick,
-                                email:user.email                            
+                            id: userId,
+                            name: user.name,
+                            surname: user.surname,
+                            nick: user.nick,
+                            email: user.email
                         };
 
                         return done(null, updateUser)
@@ -106,47 +107,67 @@ module.exports.UsuarioByIdUpdate = function(userId,user,done) {
     });
 }
 
-module.exports.UsuarioByIdUpdateImg = function(userId, fileName, fileNameOld ,done) {
+module.exports.UsuarioByIdUpdateImg = function(userId, fileName, fileNameOld, done) {
+
+
     sql.connect(config).then(() => {
 
         var request = new sql.Request();
 
         request.input('id', sql.Int, userId);
-        request.input('image', sql.VarChar, fileName);      
-        request.query('UPDATE Users SET image=@image where userId=@id',
-            function(err) {
-                
+        request.query('select image from users WHERE userId=@id',
+            function(err, recordset) {
+
                 if (err) {
                     return done(err, null);
                 }
 
+                fileNameOld = null
+
+                if (recordset.rowsAffected != 0) {
+                    fileNameOld = recordset.recordset[0].image
+                }
+
+                console.log('Archivo Anterior: ' + fileNameOld);
+
                 request.input('id', sql.Int, userId);
-                request.query('select * from users WHERE userId=@id',
-                    function(err, recordset) {
-                      
+                request.input('image', sql.VarChar, fileName);
+                request.query('UPDATE Users SET image=@image where userId=@id',
+                    function(err) {
+
                         if (err) {
                             return done(err, null);
                         }
-        
-                        if (recordset.rowsAffected == 0) {
-                            return done(null, null);
-                        }
-        
-                sql.close();
 
-               console.log(fileNameOld);
 
-                if(fileNameOld){
-                    var filePath = './assets/images/users/' + fileNameOld;
-                    fs.unlink(filePath, (err)=> {              
-                        return done(null, recordset);                          
-                    });   
-                }else {
-                    return done(null, recordset)
-                }
+
+                        request.input('id', sql.Int, userId);
+                        request.query('select * from users WHERE userId=@id',
+                            function(err, recordset) {
+
+                                if (err) {
+                                    return done(err, null);
+                                }
+
+                                if (recordset.rowsAffected == 0) {
+                                    return done(null, null);
+                                }
+
+                                sql.close();
+
+                                if (fileNameOld) {
+                                    var filePath = './assets/images/users/' + fileNameOld;
+                                    fs.unlink(filePath, (err) => {
+                                        return done(null, recordset);
+                                    });
+                                } else {
+                                    return done(null, recordset)
+                                }
+                            });
+                    });
             });
-        });                
     }).catch((err) => {
+        console.log(err);
         return done(err, null);
     });
 }

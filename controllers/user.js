@@ -86,8 +86,8 @@ function loginUser(req, res) {
         var password = params.password;
 
         var sql = "select * from users WHERE email='" + email + "'";
-        xsql.executeSql(sql).then((resultado,rej) => {
-            
+        xsql.executeSql(sql).then((resultado, rej) => {
+
             if (rej) {
                 return res.status(200).send({
                     status: 'error',
@@ -103,7 +103,7 @@ function loginUser(req, res) {
             } else {
                 bcrypt.compare(password, resultado.recordset[0].password, (err, check) => {
                     if (check) {
-                     
+
                         resultado.recordset[0].password = undefined;
 
                         return res.status(200).send({
@@ -358,6 +358,8 @@ function updateUser(req, res) {
 function uploadImage(req, res) {
     var userId = req.params.id;
 
+
+
     if (userId != req.user.sub) {
         return removeFileOfuploads(res, file_name, 'No tiene permisos para realizar esta operacion');
     }
@@ -374,17 +376,15 @@ function uploadImage(req, res) {
 
         var file_ext = ext_split[1];
 
-        if (file_ext == 'png' || file_ext == 'jpg' || file_ext == 'jpeg' || file_ext == 'gif') {
-            if(req.user.image != null){
-               
-            }
+        if (file_ext.toLowerCase() == 'png' || file_ext.toLowerCase() == 'jpg' || file_ext.toLowerCase() == 'jpeg' || file_ext.toLowerCase() == 'gif') {
 
-            userService.UsuarioByIdUpdateImg(userId, file_name, req.user.image ,function(err, resultado) {
+            userService.UsuarioByIdUpdateImg(userId, file_name, req.user.image, function(err, resultado) {
 
                 resultado.recordset[0].password = undefined;
                 return res.status(200).send(resultado.recordset[0]);
             });
         } else {
+            console.log('Imagen Incorrecta' + file_name);
             return removeFileOfuploads(res, file_name, 'Imagen Incorrecta');
         }
 
