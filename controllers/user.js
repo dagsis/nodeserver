@@ -232,7 +232,7 @@ function getUsers(req, res) {
             return res.status(200).send({
 
 
-                user: resultado.recordset,
+                users: resultado.recordset,
                 users_following: value.following,
                 users_follow_me: value.followed
             });
