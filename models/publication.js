@@ -13,7 +13,26 @@ exports.publication = {
     created_at: null
 };
 
+module.exports.reset = function(done) {
+    sql.close();
+    sql.connect(config).then(() => {
+        
+        console.log('Cierre');
+
+        sql.close();
+        
+        return done(null, true);
+
+    }).catch((err) => {
+        console.log('Error Reset ' + err)
+        sql.close();
+        return done(err, null);
+    });
+
+}
+
 module.exports.save = function(publication, done) {
+    
     sql.connect(config).then(() => {
 
         var request = new sql.Request();
@@ -27,17 +46,19 @@ module.exports.save = function(publication, done) {
        
         request.query('INSERT INTO Publications (userId,text,file_at,created_at) VALUES (@userId,@text,@file,@create_at)',
             function(err, recordset) {
-
-                sql.close();
-
+               
                 if (err) {
+                    sql.close();
                     return done(err, null);
                 }
 
-                return done(null, recordset);
+                sql.close();
+               
+                return done(null, recordset.rowsAffected);
 
             });
     }).catch((err) => {
+        sql.close();
         return done(err, null);
     });
 }
@@ -70,7 +91,6 @@ module.exports.publicationByIdUpdateImg = function(publicationId, fileName, file
         
                 sql.close();
 
-               console.log(fileNameOld);
 
                 if(fileNameOld){
                     var filePath = './assets/images/publication/' + fileNameOld;

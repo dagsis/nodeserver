@@ -5,7 +5,6 @@ var moment = require('moment');
 var secret = 'hola10';
 
 exports.ensureAuth = function(req, res, next){
-    console.log('cabe ' + req.headers.authorization)
     if(!req.headers.authorization){
         return res.status(403).send({message: 'Falta Cabecera de Autenticación'});
     }

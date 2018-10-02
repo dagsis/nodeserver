@@ -161,8 +161,7 @@ function getUser(req, res) {
 
 }
 
-var sqlDb = require('mssql');
-var settings = require('../setting');
+
 
 async function followThisUser(identity_user_id, user_id) {
 
@@ -228,7 +227,6 @@ function getUsers(req, res) {
         }
 
         followUserIds(identity_user_id).then((value) => {
-            console.log(value.following);
             return res.status(200).send({
 
 
@@ -384,7 +382,6 @@ function uploadImage(req, res) {
                 return res.status(200).send(resultado.recordset[0]);
             });
         } else {
-            console.log('Imagen Incorrecta' + file_name);
             return removeFileOfuploads(res, file_name, 'Imagen Incorrecta');
         }
 

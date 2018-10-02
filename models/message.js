@@ -34,7 +34,6 @@ module.exports.saveMessage = function(message, done) {
                     return done(err, null);
                 }
 
-                console.log(recordset);
 
                 request.query(`SELECT TOP 1 * FROM Messages WHERE emitter=` + message.emmitter + `
                               ORDER BY messageId DESC`,

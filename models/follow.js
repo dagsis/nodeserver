@@ -46,7 +46,6 @@ module.exports.delFollow = function(userId,followId, done) {
         request.input('userId', sql.Int, userId);
         request.input('followId', sql.Int, followId);
         
-        console.log(userId,followId);
        
         request.query('DELETE FROM Follows WHERE userId=@userId AND followed=@followId',
             function(err, recordset) {

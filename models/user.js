@@ -82,7 +82,6 @@ module.exports.UsuarioByIdUpdate = function(userId, user, done) {
                 request.query('UPDATE Users SET name=@name,surname=@surname,nick=@nick,email=@email where userId=@id',
                     function(err, recordset) {
 
-                        console.log(recordset);
 
                         sql.close();
 
@@ -128,7 +127,6 @@ module.exports.UsuarioByIdUpdateImg = function(userId, fileName, fileNameOld, do
                     fileNameOld = recordset.recordset[0].image
                 }
 
-                console.log('Archivo Anterior: ' + fileNameOld);
 
                 request.input('id', sql.Int, userId);
                 request.input('image', sql.VarChar, fileName);
@@ -167,7 +165,6 @@ module.exports.UsuarioByIdUpdateImg = function(userId, fileName, fileNameOld, do
                     });
             });
     }).catch((err) => {
-        console.log(err);
         return done(err, null);
     });
 }
