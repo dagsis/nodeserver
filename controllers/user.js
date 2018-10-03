@@ -134,7 +134,9 @@ function loginUser(req, res) {
 function getUser(req, res) {
     var userId = req.params.id;
 
-    var sql = "select * from users WHERE userId=" + req.user.sub;
+    console.log(userId);
+
+    var sql = "select * from users WHERE userId=" + userId;
     xsql.executeSql(sql).then((resultado, rej) => {
         if (rej) {
             return res.status(500).send({
@@ -142,8 +144,11 @@ function getUser(req, res) {
             });
         }
 
-        if (!resultado) {
-            return res.status(404).send({
+        console.log(resultado);
+
+        if (resultado.rowsAffected == 0) {
+            return res.status(200).send({
+                status: 'error',
                 message: 'El Usuario no existe'
             });
         }
@@ -152,6 +157,7 @@ function getUser(req, res) {
 
         followThisUser(userId, req.user.sub).then((value) => {
             return res.status(200).send({
+                status:'success',
                 user: resultado.recordset[0],
                 following: value.followind,
                 followeb: value.followeb
